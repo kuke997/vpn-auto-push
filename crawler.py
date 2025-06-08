@@ -1,10 +1,10 @@
-from sources import fetch_all_sources
+from sources import fetch_reliable_sources
 import json
 import os
 
 def main():
     print("开始爬取所有来源的免费VPN节点...")
-    nodes = fetch_all_sources()
+    nodes = fetch_reliable_sources()
     if not nodes:
         print("未获取到任何节点，退出。")
         return
