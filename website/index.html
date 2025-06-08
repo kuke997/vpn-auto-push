@@ -1,5 +1,76 @@
-<div class="vpn-list" id="vpn-list-section">
-  <!-- JS 渲染内容插入 -->
-</div>
-<script src="js/render.js"></script>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>免费 VPN 节点 - CloakAccess</title>
+  <style>
+    /* ---- 基础样式 ---- */
+    body, html { margin:0; padding:0; font-family: "Segoe UI",sans-serif; background:#f5f8fa; color:#333; }
+    a { text-decoration:none; color:inherit; }
+    header { background:#007bff; color:#fff; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
+    header nav a { color:#fff; margin-left:20px; font-weight:500; }
+    .hero { text-align:center; padding:40px 20px; }
+    .hero h1 { font-size:2rem; margin-bottom:10px; color:#007bff; }
+    .hero .cta-btn { background:#ff9800; color:#fff; padding:12px 24px; border:none; border-radius:4px; font-size:1rem; cursor:pointer; }
 
+    /* ---- 筛选导航 ---- */
+    .filter-bar { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin:20px;}
+    .filter-btn { padding:8px 16px; border:1px solid #007bff; border-radius:20px; background:#fff; color:#007bff; cursor:pointer; transition: all .2s; }
+    .filter-btn.active, .filter-btn:hover { background:#007bff; color:#fff; }
+
+    /* ---- 节点列表 ---- */
+    .server-table { width:100%; max-width:1024px; margin:0 auto 40px; border-collapse:separate; border-spacing:0 12px; }
+    .server-table th, .server-table td { padding:12px 8px; background:#fff; border-radius:4px; text-align:left; }
+    .server-table th { background:#007bff; color:#fff; }
+    .server-table td:first-child { font-weight:600; }
+    .download-link { color:#007bff; font-weight:500; }
+
+    /* ---- 优势区域 ---- */
+    .benefits { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; max-width:1024px; margin:0 auto 60px; }
+    .benefit { background:#fff; padding:20px; border-radius:8px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+    .benefit-icon { font-size:2rem; margin-bottom:10px; color:#007bff; }
+
+    /* ---- 页脚 ---- */
+    footer { text-align:center; font-size:0.9rem; padding:16px; background:#fff; border-top:1px solid #eee; }
+
+    /* 响应式 */
+    @media (max-width:768px) {
+      .server-table th, .server-table td { display:block; }
+      .server-table tr { margin-bottom:12px; display:block; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><strong>CloakAccess</strong></div>
+    <nav>
+      <a href="#">首页</a><a href="#">免费体验</a><a href="#">定价</a><a href="#">帮助</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>保护您的隐私，免费使用 VPN</h1>
+    <button class="cta-btn">获取免费节点</button>
+  </section>
+
+  <section class="filter-bar" id="filter-bar">
+    <!-- 地区按钮动态生成 -->
+  </section>
+
+  <section id="server-list">
+    <!-- 地区表格动态生成 -->
+  </section>
+
+  <section class="benefits">
+    <div class="benefit"><div class="benefit-icon">🚀</div><div>无限流量</div></div>
+    <div class="benefit"><div class="benefit-icon">🌍</div><div>全球多节点</div></div>
+    <div class="benefit"><div class="benefit-icon">📱</div><div>全平台支持</div></div>
+    <div class="benefit"><div class="benefit-icon">🛡️</div><div>24/7 客服</div></div>
+  </section>
+
+  <footer>© 2025 CloakAccess</footer>
+
+  <script src="js/render-flyvstyle.js"></script>
+</body>
+</html>
