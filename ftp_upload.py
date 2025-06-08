@@ -37,16 +37,23 @@ def main():
         ftp.login(ftp_user, ftp_pass)
         print(f"已连接FTP服务器：{ftp_host}")
 
-        # 切换到目标目录，按你Hostinger FTP目录结构改这里
+        # 切换到目标目录，Hostinger 的网站根目录
         ftp.cwd("domains/cloakaccess.com/public_html")
         print("切换到 FTP 目录：/domains/cloakaccess.com/public_html")
 
-        local_folder = "website"  # 你本地网站文件夹，修改为实际目录
-        if not os.path.exists(local_folder):
-            print(f"本地文件夹 '{local_folder}' 不存在，请确认路径")
+        # 上传 website 文件夹内容
+        local_website = "website"
+        if not os.path.exists(local_website):
+            print(f"本地文件夹 '{local_website}' 不存在，请确认路径")
             return
+        upload_dir(local_website, ".", ftp)
 
-        upload_dir(local_folder, ".", ftp)
+        # 上传 output 文件夹内容（保证 nodes.json 上传）
+        local_output = "output"
+        if not os.path.exists(local_output):
+            print(f"本地文件夹 '{local_output}' 不存在，请确认路径")
+            return
+        upload_dir(local_output, ".", ftp)
 
         ftp.quit()
         print("上传完成，FTP连接关闭。")
