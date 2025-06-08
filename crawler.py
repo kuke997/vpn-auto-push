@@ -3,9 +3,8 @@ import json
 import requests
 from bs4 import BeautifulSoup
 
-# 假设爬取某网页并解析 VPN 节点数据的函数（示例）
 def fetch_vpn_nodes():
-    url = 'https://example.com/free-vpn-nodes'  # 替换成真实 URL
+    url = 'https://example.com/free-vpn-nodes'  # 替换成真实目标URL
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                       '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -18,9 +17,8 @@ def fetch_vpn_nodes():
         return []
 
     soup = BeautifulSoup(resp.text, 'html.parser')
-    # 这里解析网页，示范找所有节点div，实际按网页结构调整
     nodes = []
-    node_elements = soup.select('.vpn-node')  # 假设节点有 .vpn-node 类
+    node_elements = soup.select('.vpn-node')  # 按目标网站结构改这里的选择器
     for el in node_elements:
         region = el.select_one('.region').text.strip() if el.select_one('.region') else '未知'
         city = el.select_one('.city').text.strip() if el.select_one('.city') else '未知'
@@ -40,7 +38,6 @@ def fetch_vpn_nodes():
 
 
 def save_nodes_json(nodes, path):
-    # 确保目录存在
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(nodes, f, ensure_ascii=False, indent=2)
@@ -53,9 +50,8 @@ def main():
         print("未获取到任何节点，退出。")
         return
 
-    output_path = os.path.join(os.path.dirname(__file__), 'website', 'nodes.json')
+    output_path = os.path.join(os.path.dirname(__file__), 'output', 'nodes.json')
     save_nodes_json(nodes, output_path)
-
 
 if __name__ == '__main__':
     main()
