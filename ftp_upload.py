@@ -1,61 +1,57 @@
-import ftplib
 import os
-import sys
+import json
+import requests
+from bs4 import BeautifulSoup
 
-ftp_host = os.getenv("FTP_HOST")
-ftp_user = os.getenv("FTP_USER")
-ftp_pass = os.getenv("FTP_PASS")
+def fetch_vpn_nodes():
+    url = 'https://example.com/free-vpn-nodes'  # 替换成真实目标URL
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"请求失败: {e}")
+        return []
 
-if not all([ftp_host, ftp_user, ftp_pass]):
-    print("错误：请先设置环境变量 FTP_HOST、FTP_USER、FTP_PASS")
-    sys.exit(1)
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    nodes = []
+    node_elements = soup.select('.vpn-node')  # 按目标网站结构改这里的选择器
+    for el in node_elements:
+        region = el.select_one('.region').text.strip() if el.select_one('.region') else '未知'
+        city = el.select_one('.city').text.strip() if el.select_one('.city') else '未知'
+        protocol = el.select_one('.protocol').text.strip() if el.select_one('.protocol') else '未知'
+        count = int(el.select_one('.count').text.strip()) if el.select_one('.count') else 0
+        download_url = el.select_one('a.download-link')['href'] if el.select_one('a.download-link') else ''
 
-LOCAL_UPLOAD_DIR = "website"
-FTP_BASE_DIR = "domains/cloakaccess.com/public_html"
+        node = {
+            'region': region,
+            'city': city,
+            'protocol': protocol,
+            'count': count,
+            'download_url': download_url,
+        }
+        nodes.append(node)
+    return nodes
 
-def upload_dir(local_dir, ftp_dir, ftp):
-    for item in os.listdir(local_dir):
-        local_path = os.path.join(local_dir, item)
-        ftp_path = f"{ftp_dir}/{item}" if ftp_dir != '.' else item
 
-        if os.path.isdir(local_path):
-            try:
-                ftp.mkd(ftp_path)
-                print(f"[MKDIR] 创建目录 {ftp_path}")
-            except ftplib.error_perm as e:
-                if '550' in str(e):
-                    # 目录已存在，忽略
-                    pass
-                else:
-                    print(f"[WARN] 创建目录异常: {e}")
-            upload_dir(local_path, ftp_path, ftp)
-        else:
-            try:
-                with open(local_path, "rb") as f:
-                    ftp.storbinary(f"STOR {ftp_path}", f)
-                    print(f"[UPLOADED] 上传文件 {ftp_path}")
-            except Exception as e:
-                print(f"[ERROR] 上传文件 {ftp_path} 失败: {e}")
+def save_nodes_json(nodes, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(nodes, f, ensure_ascii=False, indent=2)
+    print(f"成功写入节点数据，共 {len(nodes)} 条，路径：{path}")
+
 
 def main():
-    try:
-        ftp = ftplib.FTP(ftp_host, timeout=30)
-        ftp.login(ftp_user, ftp_pass)
-        print(f"已连接FTP服务器：{ftp_host}")
+    nodes = fetch_vpn_nodes()
+    if not nodes:
+        print("未获取到任何节点，退出。")
+        return
 
-        ftp.cwd(FTP_BASE_DIR)
-        print(f"切换到 FTP 目录：{FTP_BASE_DIR}")
+    output_path = os.path.join(os.path.dirname(__file__), 'output', 'nodes.json')
+    save_nodes_json(nodes, output_path)
 
-        if not os.path.exists(LOCAL_UPLOAD_DIR):
-            print(f"本地文件夹 '{LOCAL_UPLOAD_DIR}' 不存在，请确认路径")
-            return
-
-        upload_dir(LOCAL_UPLOAD_DIR, ".", ftp)
-
-        ftp.quit()
-        print("上传完成，FTP连接关闭。")
-    except Exception as e:
-        print(f"发生错误：{e}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
