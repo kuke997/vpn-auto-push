@@ -14,7 +14,8 @@ def fetch_from_url_list(name, url):
             "city": "Unknown",
             "protocol": link.split("://")[0],
             "count": 1,
-            "download_url": url
+            "download_url": url,
+            "source": name
         } for link in links]
     except Exception as e:
         print(f"[{name}] TXT链接失败: {e}")
@@ -31,7 +32,8 @@ def fetch_from_yaml_url(name, url):
             "city": proxy.get("server", "Unknown"),
             "protocol": proxy.get("type", "Unknown"),
             "count": 1,
-            "download_url": url
+            "download_url": url,
+            "source": name
         } for proxy in proxies]
     except Exception as e:
         print(f"[{name}] YAML解析失败: {e}")
@@ -42,16 +44,19 @@ def fetch_from_html_page(name, url, pattern):
         res = requests.get(url, timeout=15)
         res.raise_for_status()
         matches = re.findall(pattern, res.text)
-        return [{
-            "region": "Unknown",
-            "city": "Unknown",
-            "protocol": "unknown",
-            "count": 1,
-            "download_url": link
-        } for link in list(set(matches))]
+        return list(set(matches))  # 直接返回去重后的订阅链接列表
     except Exception as e:
         print(f"[{name}] HTML页面失败: {e}")
         return []
+
+# 新增函数：递归解析订阅链接
+def parse_subscription_links(name, url):
+    """根据订阅链接类型调用对应的解析函数"""
+    if url.endswith(('.yaml', '.yml')):
+        return fetch_from_yaml_url(name, url)
+    elif url.endswith('.txt'):
+        return fetch_from_yaml_url(name, url)
+    return []
 
 def fetch_freevpn_world():
     print("[freevpn.world] 开始爬取")
@@ -113,7 +118,6 @@ def fetch_all_sources():
     all_nodes = []
 
     sources = [
-        # 你之前的资源列表
         {
             "name": "proxypoolss",
             "type": "yaml",
@@ -139,21 +143,46 @@ def fetch_all_sources():
     ]
 
     for src in sources:
+        nodes = []
         if src["type"] == "yaml":
             nodes = fetch_from_yaml_url(src["name"], src["url"])
         elif src["type"] == "txt":
             nodes = fetch_from_url_list(src["name"], src["url"])
         elif src["type"] == "html":
-            nodes = fetch_from_html_page(src["name"], src["url"], src["pattern"])
-        else:
-            nodes = []
-        print(f"✅ {src['name']} 获取到 {len(nodes)} 条")
+            # 先获取页面中的订阅链接
+            subscription_links = fetch_from_html_page(src["name"], src["url"], src["pattern"])
+            print(f"[{src['name']}] 发现 {len(subscription_links)} 个订阅链接")
+            
+            # 对每个订阅链接进行二次解析
+            for i, link in enumerate(subscription_links):
+                print(f"[{src['name']}] 解析订阅链接 {i+1}/{len(subscription_links)}: {link}")
+                sub_name = f"{src['name']}-sub-{i}"
+                nodes += parse_subscription_links(sub_name, link)
+        
+        print(f"✅ {src['name']} 获取到 {len(nodes)} 条节点")
         all_nodes.extend(nodes)
 
-    # 新增调用 freevpn.world
-    print("调用 fetch_freevpn_world()")
+    # 调用 freevpn.world 爬取
+    print("开始爬取 freevpn.world 节点...")
     freevpn_nodes = fetch_freevpn_world()
     print(f"freevpn.world 抓取到节点数: {len(freevpn_nodes)}")
     all_nodes.extend(freevpn_nodes)
 
     return all_nodes
+
+# 测试代码
+if __name__ == "__main__":
+    print("开始抓取所有资源...")
+    all_nodes = fetch_all_sources()
+    print("\n最终结果统计:")
+    print(f"总节点数: {len(all_nodes)}")
+    
+    # 按来源统计
+    source_count = {}
+    for node in all_nodes:
+        source = node.get("source", "unknown")
+        source_count[source] = source_count.get(source, 0) + 1
+    
+    print("\n来源分布:")
+    for source, count in source_count.items():
+        print(f"{source}: {count} 个节点")
