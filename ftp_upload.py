@@ -44,19 +44,12 @@ def main():
         ftp.cwd("domains/cloakaccess.com/public_html")
         print("切换到 FTP 目录：/domains/cloakaccess.com/public_html")
 
-        # 上传 website/ 文件夹内容
+        # 上传 website/ 文件夹内容（包含 nodes.json 和网页）
         local_website = "website"
         if not os.path.exists(local_website):
             print(f"本地文件夹 '{local_website}' 不存在，请确认路径")
             return
         upload_dir(local_website, ".", ftp)
-
-        # 上传 output/ 文件夹内容（nodes.json）
-        local_output = "output"
-        if not os.path.exists(local_output):
-            print(f"本地文件夹 '{local_output}' 不存在，请确认路径")
-            return
-        upload_dir(local_output, ".", ftp)
 
         ftp.quit()
         print("上传完成，FTP连接关闭。")
