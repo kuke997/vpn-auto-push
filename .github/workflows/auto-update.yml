@@ -1,40 +1,45 @@
-name: Generate and Deploy VPN Nodes
+name: Auto Crawl & Deploy
 
 on:
   schedule:
-    - cron: '0 2 * * *' # 每天 UTC 时间 02:00 自动运行（北京时间 10:00）
+    - cron: "0 */6 * * *"  # 每6小时运行
   workflow_dispatch:
 
 jobs:
-  generate-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+    - name: 克隆仓库
+      uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: 设置 Python
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: "3.x"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+    - name: 安装依赖
+      run: pip install -r requirements.txt
 
-    - name: Run crawler to generate nodes.json
-      run: |
-        python crawler.py
+    - name: 运行爬虫
+      run: python crawler.py
 
-    - name: Copy nodes.json to website
-      run: |
-        cp output/nodes.json website/nodes.json
+    - name: 拷贝 nodes.json 到网站目录
+      run: cp output/nodes.json website/nodes.json
 
-    - name: Commit and push to GitHub Pages branch or main
+    - name: 提交并推送到 GitHub
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
         git add website/nodes.json
         git commit -m '🔄 Auto update nodes.json' || echo "No changes to commit"
+        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git push
+
+    - name: 上传到 Hostinger（FTP）
+      run: python ftp_upload.py
+      env:
+        FTP_HOST: ${{ secrets.FTP_HOST }}
+        FTP_USER: ${{ secrets.FTP_USER }}
+        FTP_PASS: ${{ secrets.FTP_PASS }}
