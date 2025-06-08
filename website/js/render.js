@@ -1,32 +1,67 @@
-// 渲染 VPN 节点列表
-fetch("nodes.json")
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! 状态码: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    const list = document.getElementById("vpn-list-section");
-    if (!data || data.length === 0) {
-      list.innerHTML = "<p>暂无节点数据</p>";
-      return;
-    }
+async function loadNodes() {
+  const res = await fetch('/nodes.json', {cache:'no-store'});
+  return res.ok ? await res.json() : [];
+}
 
-    data.forEach((node, i) => {
-      const div = document.createElement("div");
-      div.className = "vpn-item";
-      div.innerHTML = `
-        <h3>订阅 ${i + 1}</h3>
-        <div class="country">通用</div>
-        <div class="info">支持协议：Clash/V2Ray/SS</div>
-        <button onclick="window.open('${node.url}', '_blank')">下载配置</button>
-      `;
-      list.appendChild(div);
-    });
-  })
-  .catch(error => {
-    console.error("加载节点数据失败:", error);
-    const list = document.getElementById("vpn-list-section");
-    list.innerHTML = `<p style="color:red;">加载节点数据失败: ${error.message}</p>`;
+function uniqueRegions(nodes) {
+  return [...new Set(nodes.map(n => n.region))];
+}
+
+function createFilterButtons(regions) {
+  const bar = document.getElementById('filter-bar');
+  regions.forEach((r, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = r;
+    btn.dataset.region = r;
+    btn.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      showRegion(r);
+    };
+    bar.appendChild(btn);
   });
+}
+
+function createTableForRegion(region, nodes) {
+  const table = document.createElement('table');
+  table.className = 'server-table';
+  table.innerHTML = `
+    <thead><tr><th>城市</th><th>协议</th><th>数量</th><th>操作</th></tr></thead>
+    <tbody>
+      ${nodes.map(n => `
+        <tr>
+          <td>${n.city}</td>
+          <td>${n.protocol}</td>
+          <td>${n.count}</td>
+          <td><a class="download-link" href="${n.download_url}" target="_blank">下载配置</a></td>
+        </tr>`).join('')}
+    </tbody>`;
+  const container = document.createElement('div');
+  container.id = `region-${region}`;
+  container.appendChild(table);
+  return container;
+}
+
+let allNodes, regions;
+
+async function render() {
+  allNodes = await loadNodes();
+  regions = uniqueRegions(allNodes);
+  createFilterButtons(regions);
+  const list = document.getElementById('server-list');
+  regions.forEach(r => {
+    const regionNodes = allNodes.filter(n=>n.region===r);
+    const tableDiv = createTableForRegion(r, regionNodes);
+    tableDiv.style.display = r === regions[0] ? '' : 'none';
+    list.appendChild(tableDiv);
+  });
+}
+
+function showRegion(region) {
+  regions.forEach(r => {
+    document.getElementById(`region-${r}`).style.display = (r === region ? '' : 'none');
+  });
+}
+
+render();
