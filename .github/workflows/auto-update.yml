@@ -26,7 +26,7 @@ jobs:
     - name: 拷贝 nodes.json 到网站目录
       run: cp output/nodes.json website/nodes.json
 
-    - name: 提交并推送到 GitHub
+    - name: 提交并推送 nodes.json 更新到 GitHub
       env:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -37,9 +37,9 @@ jobs:
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git push
 
-    - name: 上传到 Hostinger（FTP）
-      run: python ftp_upload.py
+    - name: 上传网站文件到 Hostinger（FTP）
       env:
         FTP_HOST: ${{ secrets.FTP_HOST }}
         FTP_USER: ${{ secrets.FTP_USER }}
         FTP_PASS: ${{ secrets.FTP_PASS }}
+      run: python ftp_upload.py
