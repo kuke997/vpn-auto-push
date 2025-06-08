@@ -72,7 +72,7 @@ def extract_subscription_links(html, base_url):
                 links.append(full_url)
     
     # 额外检查文本内容中的链接
-    text_links = re.findall(r'https?://[^\s"\'<>]+?\.(?:yaml|yml|txt|conf|ini|v2ray|ssr?|sub|list)', html, re.I)
+    text_links = re.findall(r'https?://[^\s"\'<>]+?\.(yaml|yml|txt|conf|ini|v2ray|ssr?|sub|list)', html, re.I)
     for link in text_links:
         full_url = urljoin(base_url, link)
         links.append(full_url)
@@ -160,99 +160,6 @@ def parse_subscription(url, session=None):
         print(f"⚠️ 解析订阅失败: {e}")
         return []
 
-def crawl_freefq():
-    """专门抓取 freefq.com 的节点"""
-    print("\n" + "="*50)
-    print("开始抓取 freefq.com 免费节点")
-    print("="*50)
-    
-    base_url = "https://freefq.com/"
-    session = get_session()
-    all_nodes = []
-    
-    try:
-        # 获取首页内容
-        html, session = fetch_page(base_url, session)
-        soup = BeautifulSoup(html, 'html.parser')
-        
-        # 查找所有文章链接
-        article_links = []
-        for article in soup.select('article'):
-            a_tag = article.find('a', href=True)
-            if a_tag and a_tag.get('href'):
-                article_url = urljoin(base_url, a_tag['href'])
-                if article_url not in article_links:
-                    article_links.append(article_url)
-        
-        print(f"找到 {len(article_links)} 篇节点文章")
-        
-        # 处理每篇文章
-        for i, article_url in enumerate(article_links):
-            print(f"\n处理文章 {i+1}/{len(article_links)}: {article_url}")
-            
-            try:
-                # 获取文章内容
-                article_html, session = fetch_page(article_url, session)
-                article_soup = BeautifulSoup(article_html, 'html.parser')
-                
-                # 查找文章正文
-                content_div = article_soup.select_one('div.entry-content')
-                if not content_div:
-                    print("⚠️ 未找到文章内容")
-                    continue
-                
-                # 提取所有可能的订阅链接
-                subscription_links = extract_subscription_links(str(content_div), article_url)
-                print(f"发现 {len(subscription_links)} 个订阅链接")
-                
-                # 解析每个订阅链接
-                for j, sub_url in enumerate(subscription_links):
-                    print(f"  解析订阅 {j+1}/{len(subscription_links)}: {sub_url}")
-                    nodes = parse_subscription(sub_url, session)
-                    if nodes:
-                        all_nodes.extend(nodes)
-                        print(f"  添加了 {len(nodes)} 个节点")
-                
-                # 直接提取文章中的节点信息
-                print("尝试直接提取文章中的节点信息...")
-                text_content = content_div.get_text()
-                
-                # 提取IP:PORT格式的节点
-                ip_port_nodes = re.findall(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[:：\s]+(\d{2,5})', text_content)
-                for ip, port in ip_port_nodes:
-                    all_nodes.append({
-                        "name": f"{ip}:{port}",
-                        "type": "unknown",
-                        "server": ip,
-                        "port": port,
-                        "source": article_url
-                    })
-                
-                # 提取特殊格式节点
-                special_nodes = re.findall(r'(vmess|ss|trojan)://[a-zA-Z0-9+/=._\-]+', text_content)
-                for node in special_nodes:
-                    all_nodes.append({
-                        "name": node.split('://')[0].upper() + "节点",
-                        "type": node.split('://')[0],
-                        "config": node,
-                        "source": article_url
-                    })
-                
-                print(f"文章直接提取到 {len(ip_port_nodes) + len(special_nodes)} 个节点")
-                
-                # 避免请求过快
-                time.sleep(1)
-                
-            except Exception as e:
-                print(f"⚠️ 处理文章失败: {e}")
-                continue
-    
-    except Exception as e:
-        print(f"⚠️ 抓取 freefq.com 失败: {e}")
-    
-    print(f"\n从 freefq.com 获取到 {len(all_nodes)} 个节点")
-    return all_nodes
-
 def fetch_reliable_sources():
     """获取可靠的订阅源"""
     print("\n" + "="*50)
@@ -273,12 +180,20 @@ def fetch_reliable_sources():
             "url": "https://raw.githubusercontent.com/freefq/free/master/v2"
         },
         {
-            "name": "clashnode",
-            "url": "https://clashnode.com/wp-content/uploads/2023/08/20230815.yaml"
+            "name": "Pawdroid",
+            "url": "https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub"
         },
         {
-            "name": "pojiedi",
-            "url": "https://raw.githubusercontent.com/pojiedi/pojiedi.github.io/master/-static-files-/clash/config.yaml"
+            "name": "aiboboxx",
+            "url": "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2"
+        },
+        {
+            "name": "mahdibland",
+            "url": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_merge.txt"
+        },
+        {
+            "name": "peasoft",
+            "url": "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt"
         }
     ]
     
@@ -321,21 +236,15 @@ def save_nodes(nodes, filename="vpn_nodes.txt"):
 def main():
     print("开始获取免费VPN节点...")
     
-    # 获取 freefq.com 的节点
-    freefq_nodes = crawl_freefq()
-    
     # 获取可靠源的节点
-    reliable_nodes = fetch_reliable_sources()
-    
-    # 合并所有节点
-    all_nodes = freefq_nodes + reliable_nodes
+    all_nodes = fetch_reliable_sources()
     
     # 去重
     unique_nodes = []
     seen = set()
     for node in all_nodes:
         # 使用配置或服务器+端口作为唯一标识
-        identifier = node.get('config', None) or f"{node.get('server', '')}:{node.get('port', '')}"
+        identifier = node.get('config', None) or f"{node.get('server', '')}:{node.get('port', '')}")
         if identifier and identifier not in seen:
             seen.add(identifier)
             unique_nodes.append(node)
