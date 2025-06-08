@@ -40,6 +40,18 @@ def validate_raw_link(url):
         pass
     return False
 
+def guess_region(url):
+    if any(k in url for k in ['sg', 'singapore']):
+        return 'Asia'
+    elif any(k in url for k in ['jp', 'japan']):
+        return 'Asia'
+    elif any(k in url for k in ['us', 'usa', 'america']):
+        return 'North America'
+    elif any(k in url for k in ['de', 'fr', 'eu', 'europe']):
+        return 'Europe'
+    else:
+        return 'Others'
+
 def main():
     all_links = []
 
@@ -51,13 +63,27 @@ def main():
             all_links.append(url)
 
     all_links = list(set(all_links))  # 去重
-    nodes = [{"url": link} for link in all_links]
 
-    os.makedirs("output", exist_ok=True)
-    with open("output/nodes.json", "w", encoding="utf-8") as f:
+    nodes = []
+    for link in all_links:
+        region = guess_region(link)
+        city = re.search(r'//([a-zA-Z0-9\-]+)\.', link)
+        city = city.group(1).capitalize() if city else 'Unknown'
+        protocol = "Clash" if link.endswith('.yaml') else 'Vmess' if 'vmess://' in link else 'Other'
+
+        nodes.append({
+            "region": region,
+            "city": city,
+            "protocol": protocol,
+            "count": 1,
+            "download_url": link
+        })
+
+    os.makedirs("website", exist_ok=True)  # 确保 website/ 目录存在
+    with open("website/nodes.json", "w", encoding="utf-8") as f:
         json.dump(nodes, f, ensure_ascii=False, indent=2)
 
-    print(f"[DONE] 共保存 {len(nodes)} 个节点链接")
+    print(f"[DONE] 共保存 {len(nodes)} 个节点")
 
 if __name__ == "__main__":
     main()
