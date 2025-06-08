@@ -1,0 +1,16 @@
+[
+  {
+    "region": "Europe",
+    "city": "Fastly",
+    "protocol": "Clash",
+    "count": 1,
+    "download_url": "https://fastly.jsdelivr.net/gh/freenodes/freenodes@main/clash.yaml"
+  },
+  {
+    "region": "Europe",
+    "city": "Fastly",
+    "protocol": "Clash",
+    "count": 1,
+    "download_url": "https://fastly.jsdelivr.net/gh/freenodes/freenodes@main/ClashPremiumFree.yaml"
+  }
+]
