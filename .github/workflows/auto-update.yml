@@ -1,1 +1,32 @@
+name: Auto Crawl & Deploy
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # 每6小时运行
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 克隆仓库
+      uses: actions/checkout@v3
+
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.x"
+
+    - name: 安装依赖
+      run: pip install -r requirements.txt
+
+    - name: 运行爬虫
+      run: python crawler.py
+
+    - name: 上传到 Hostinger（FTP）
+      run: python ftp_upload.py
+      env:
+        FTP_HOST: ${{ secrets.FTP_HOST }}
+        FTP_USER: ${{ secrets.FTP_USER }}
+        FTP_PASS: ${{ secrets.FTP_PASS }}
 
